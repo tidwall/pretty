@@ -72,7 +72,7 @@ Will format the json to:
 
 ## Customized output
 
-There's a `PrettyOptions` which allows for a customized output with the following options:
+There's a `PrettyOptions(json, opts)` function which allows for customizing the output with the following options:
 
 ```go
 type Options struct {

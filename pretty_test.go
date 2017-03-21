@@ -14,6 +14,7 @@ import (
 func j(json interface{}) string {
 	var v interface{}
 	if err := gojson.Unmarshal([]byte(fmt.Sprintf("%s", json)), &v); err != nil {
+		fmt.Printf(">>%s<<\n", json)
 		panic(err)
 	}
 	data, err := gojson.Marshal(v)
@@ -52,8 +53,11 @@ func TestPretty(t *testing.T) {
 	assert.Equal(t, j(example2), j(pretty))
 	pretty = Pretty([]byte(" "))
 	assert.Equal(t, "", string(pretty))
-	pretty = Pretty([]byte("{  "))
-	assert.Equal(t, "{", string(pretty))
+	opts := *DefaultOptions
+	opts.SortKeys = true
+	pretty = PrettyOptions(Ugly(Pretty([]byte(example2))), &opts)
+	assert.Equal(t, j(pretty), j(pretty))
+	assert.Equal(t, j(example2), j(pretty))
 }
 
 func TestUgly(t *testing.T) {

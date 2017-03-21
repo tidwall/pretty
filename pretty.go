@@ -1,16 +1,27 @@
 package pretty
 
+import (
+	"sort"
+)
+
 // Options is Pretty options
 type Options struct {
-	// Width is an ideal column width.
+	// Width is an max column width for single line arrays
 	// Default is 80
 	Width int
-	// Indent is the nested indentation.
+	// Prefix is a prefix for all lines
+	// Default is an empty string
+	Prefix string
+	// Indent is the nested indentation
+	// Default is two spaces
 	Indent string
+	// SortKeys will sort the keys alphabetically
+	// Default is false
+	SortKeys bool
 }
 
 // DefaultOptions is the default options for pretty formats.
-var DefaultOptions = &Options{Width: 80, Indent: "  "}
+var DefaultOptions = &Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
 
 // Pretty converts the input json into a more human readable format where each
 // element is on it's own line with clear indentation.
@@ -22,7 +33,12 @@ func PrettyOptions(json []byte, opts *Options) []byte {
 		opts = DefaultOptions
 	}
 	buf := make([]byte, 0, len(json))
-	buf, _, _, _ = appendPrettyAny(buf, json, 0, true, DefaultOptions.Width, DefaultOptions.Indent, 0, 0, -1)
+	if len(opts.Prefix) != 0 {
+		buf = append(buf, opts.Prefix...)
+	}
+	buf, _, _, _ = appendPrettyAny(buf, json, 0, true,
+		opts.Width, opts.Prefix, opts.Indent, opts.SortKeys,
+		0, 0, -1)
 	return buf
 }
 
@@ -65,7 +81,7 @@ func ugly(dst, src []byte) []byte {
 	return dst
 }
 
-func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, indent string, tabs, nl, max int) ([]byte, int, int, bool) {
+func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, prefix, indent string, sortkeys bool, tabs, nl, max int) ([]byte, int, int, bool) {
 	for ; i < len(json); i++ {
 		if json[i] <= ' ' {
 			continue
@@ -77,10 +93,10 @@ func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, indent str
 			return appendPrettyNumber(buf, json, i, nl)
 		}
 		if json[i] == '{' {
-			return appendPrettyObject(buf, json, i, '{', '}', pretty, width, indent, tabs, nl, max)
+			return appendPrettyObject(buf, json, i, '{', '}', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
 		}
 		if json[i] == '[' {
-			return appendPrettyObject(buf, json, i, '[', ']', pretty, width, indent, tabs, nl, max)
+			return appendPrettyObject(buf, json, i, '[', ']', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
 		}
 		switch json[i] {
 		case 't':
@@ -94,7 +110,31 @@ func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, indent str
 	return buf, i, nl, true
 }
 
-func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, width int, indent string, tabs, nl, max int) ([]byte, int, int, bool) {
+type pair struct {
+	kstart, kend int
+	vstart, vend int
+}
+
+type byKey struct {
+	sorted bool
+	json   []byte
+	pairs  []pair
+}
+
+func (arr *byKey) Len() int {
+	return len(arr.pairs)
+}
+func (arr *byKey) Less(i, j int) bool {
+	key1 := arr.json[arr.pairs[i].kstart+1 : arr.pairs[i].kend-1]
+	key2 := arr.json[arr.pairs[j].kstart+1 : arr.pairs[j].kend-1]
+	return string(key1) < string(key2)
+}
+func (arr *byKey) Swap(i, j int) {
+	arr.pairs[i], arr.pairs[j] = arr.pairs[j], arr.pairs[i]
+	arr.sorted = true
+}
+
+func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, width int, prefix, indent string, sortkeys bool, tabs, nl, max int) ([]byte, int, int, bool) {
 	var ok bool
 	if width > 0 {
 		if pretty && open == '[' && max == -1 {
@@ -102,7 +142,7 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 			max := width - (len(buf) - nl)
 			if max > 3 {
 				s1, s2 := len(buf), i
-				buf, i, _, ok = appendPrettyObject(buf, json, i, '[', ']', false, width, "", 0, 0, max)
+				buf, i, _, ok = appendPrettyObject(buf, json, i, '[', ']', false, width, prefix, "", sortkeys, 0, 0, max)
 				if ok && len(buf)-s1 <= max {
 					return buf, i, nl, true
 				}
@@ -115,6 +155,10 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 	}
 	buf = append(buf, open)
 	i++
+	var pairs []pair
+	if open == '{' && sortkeys {
+		pairs = make([]pair, 0, 8)
+	}
 	var n int
 	for ; i < len(json); i++ {
 		if json[i] <= ' ' {
@@ -122,12 +166,15 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 		}
 		if json[i] == close {
 			if pretty {
+				if open == '{' && sortkeys {
+					buf = sortPairs(json, buf, pairs)
+				}
 				if n > 0 {
 					nl = len(buf)
 					buf = append(buf, '\n')
 				}
 				if buf[len(buf)-1] != open {
-					buf = appendTabs(buf, indent, tabs)
+					buf = appendTabs(buf, prefix, indent, tabs)
 				}
 			}
 			buf = append(buf, close)
@@ -140,27 +187,65 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 					buf = append(buf, ' ')
 				}
 			}
+			var p pair
 			if pretty {
 				nl = len(buf)
 				buf = append(buf, '\n')
-				buf = appendTabs(buf, indent, tabs+1)
+				if open == '{' && sortkeys {
+					p.kstart = i
+					p.vstart = len(buf)
+				}
+				buf = appendTabs(buf, prefix, indent, tabs+1)
 			}
 			if open == '{' {
 				buf, i, nl, _ = appendPrettyString(buf, json, i, nl)
+				if sortkeys {
+					p.kend = i
+				}
 				buf = append(buf, ':')
 				if pretty {
 					buf = append(buf, ' ')
 				}
 			}
-			buf, i, nl, ok = appendPrettyAny(buf, json, i, pretty, width, indent, tabs+1, nl, max)
+			buf, i, nl, ok = appendPrettyAny(buf, json, i, pretty, width, prefix, indent, sortkeys, tabs+1, nl, max)
 			if max != -1 && !ok {
 				return buf, i, nl, false
+			}
+			if pretty && open == '{' && sortkeys {
+				p.vend = len(buf)
+				if p.kstart > p.kend || p.vstart > p.vend {
+					// bad data. disable sorting
+					sortkeys = false
+				} else {
+					pairs = append(pairs, p)
+				}
 			}
 			i--
 			n++
 		}
 	}
 	return buf, i, nl, open != '{'
+}
+func sortPairs(json, buf []byte, pairs []pair) []byte {
+	if len(pairs) == 0 {
+		return buf
+	}
+	vstart := pairs[0].vstart
+	vend := pairs[len(pairs)-1].vend
+	arr := byKey{false, json, pairs}
+	sort.Sort(&arr)
+	if !arr.sorted {
+		return buf
+	}
+	nbuf := make([]byte, 0, vend-vstart)
+	for i, p := range pairs {
+		nbuf = append(nbuf, buf[p.vstart:p.vend]...)
+		if i < len(pairs)-1 {
+			nbuf = append(nbuf, ',')
+			nbuf = append(nbuf, '\n')
+		}
+	}
+	return append(buf[:vstart], nbuf...)
 }
 
 func appendPrettyString(buf, json []byte, i, nl int) ([]byte, int, int, bool) {
@@ -197,7 +282,10 @@ func appendPrettyNumber(buf, json []byte, i, nl int) ([]byte, int, int, bool) {
 	return append(buf, json[s:i]...), i, nl, true
 }
 
-func appendTabs(buf []byte, indent string, tabs int) []byte {
+func appendTabs(buf []byte, prefix, indent string, tabs int) []byte {
+	if len(prefix) != 0 {
+		buf = append(buf, prefix...)
+	}
 	for i := 0; i < tabs; i++ {
 		buf = append(buf, ' ', ' ')
 	}

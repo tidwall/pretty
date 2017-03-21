@@ -70,6 +70,26 @@ Will format the json to:
 {"name":{"first":"Tom","last":"Anderson"},"age":37,"children":["Sara","Alex","Jack"],"fav.movie":"Deer Hunter","friends":[{"first":"Janet","last":"Murphy","age":44}]}```
 ```
 
+## Customized output
+
+There's a `PrettyOptions` which allows for a customized output with the following options:
+
+```go
+type Options struct {
+	// Width is an max column width for single line arrays
+	// Default is 80
+	Width int
+	// Prefix is a prefix for all lines
+	// Default is an empty string
+	Prefix string
+	// Indent is the nested indentation
+	// Default is two spaces
+	Indent string
+	// SortKeys will sort the keys alphabetically
+	// Default is false
+	SortKeys bool
+}
+```
 ## Performance
 
 Benchmarks of Pretty alongside the builtin `encoding/json` Indent/Compact methods.

@@ -39,6 +39,7 @@ func PrettyOptions(json []byte, opts *Options) []byte {
 	buf, _, _, _ = appendPrettyAny(buf, json, 0, true,
 		opts.Width, opts.Prefix, opts.Indent, opts.SortKeys,
 		0, 0, -1)
+	buf = append(buf, '\n')
 	return buf
 }
 

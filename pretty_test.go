@@ -2,22 +2,21 @@ package pretty
 
 import (
 	"bytes"
-	gojson "encoding/json"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func j(json interface{}) string {
+func j(js interface{}) string {
 	var v interface{}
-	if err := gojson.Unmarshal([]byte(fmt.Sprintf("%s", json)), &v); err != nil {
-		fmt.Printf(">>%s<<\n", json)
+	if err := json.Unmarshal([]byte(fmt.Sprintf("%s", js)), &v); err != nil {
+		fmt.Printf(">>%s<<\n", js)
 		panic(err)
 	}
-	data, err := gojson.Marshal(v)
+	data, err := json.Marshal(v)
 	if err != nil {
 		panic(err)
 	}
@@ -44,31 +43,38 @@ var example1 = []byte(`
 
 var example2 = `[ 0, 10, 10.10, true, false, null, "hello \" "]`
 
+func assertEqual(t *testing.T, a, b interface{}) {
+	t.Helper()
+	if !reflect.DeepEqual(a, b) {
+		t.Fatalf("Not equal\n\t'%v'\n\t'%v'", a, b)
+	}
+}
+
 func TestPretty(t *testing.T) {
 	pretty := Pretty(Ugly(Pretty([]byte(example1))))
-	assert.Equal(t, j(pretty), j(pretty))
-	assert.Equal(t, j(example1), j(pretty))
+	assertEqual(t, j(pretty), j(pretty))
+	assertEqual(t, j(example1), j(pretty))
 	pretty = Pretty(Ugly(Pretty([]byte(example2))))
-	assert.Equal(t, j(pretty), j(pretty))
-	assert.Equal(t, j(example2), j(pretty))
+	assertEqual(t, j(pretty), j(pretty))
+	assertEqual(t, j(example2), j(pretty))
 	pretty = Pretty([]byte(" "))
-	assert.Equal(t, "", string(pretty))
+	assertEqual(t, "", string(pretty))
 	opts := *DefaultOptions
 	opts.SortKeys = true
 	pretty = PrettyOptions(Ugly(Pretty([]byte(example2))), &opts)
-	assert.Equal(t, j(pretty), j(pretty))
-	assert.Equal(t, j(example2), j(pretty))
+	assertEqual(t, j(pretty), j(pretty))
+	assertEqual(t, j(example2), j(pretty))
 }
 
 func TestUgly(t *testing.T) {
 	ugly := Ugly([]byte(example1))
 	var buf bytes.Buffer
-	err := gojson.Compact(&buf, []byte(example1))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, buf.Bytes(), ugly)
+	err := json.Compact(&buf, []byte(example1))
+	assertEqual(t, nil, err)
+	assertEqual(t, buf.Bytes(), ugly)
 	ugly = UglyInPlace(ugly)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, buf.Bytes(), ugly)
+	assertEqual(t, nil, err)
+	assertEqual(t, buf.Bytes(), ugly)
 }
 
 func TestRandom(t *testing.T) {
@@ -357,7 +363,7 @@ func TestBig(t *testing.T) {
 	opts := *DefaultOptions
 	opts.SortKeys = true
 	jsonb := PrettyOptions(Ugly([]byte(json)), &opts)
-	assert.Equal(t, j(jsonb), j(json))
+	assertEqual(t, j(jsonb), j(json))
 }
 
 func TestColor(t *testing.T) {
@@ -418,7 +424,7 @@ func BenchmarkJSONIndent(t *testing.B) {
 	t.ReportAllocs()
 	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
-		gojson.Indent(&dst, example1, "", "  ")
+		json.Indent(&dst, example1, "", "  ")
 	}
 }
 
@@ -427,6 +433,6 @@ func BenchmarkJSONCompact(t *testing.B) {
 	t.ReportAllocs()
 	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
-		gojson.Compact(&dst, example1)
+		json.Compact(&dst, example1)
 	}
 }

@@ -1,5 +1,5 @@
 # Pretty
-[![Build Status](https://img.shields.io/travis/tidwall/pretty.svg?style=flat-square)](https://travis-ci.org/tidwall/prettty)
+
 [![Coverage Status](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat-square)](http://gocover.io/github.com/tidwall/pretty)
 [![GoDoc](https://img.shields.io/badge/api-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/tidwall/pretty) 
 

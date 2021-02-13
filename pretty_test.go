@@ -445,3 +445,13 @@ func TestPrettyNoSpaceAfterNewline(t *testing.T) {
 		t.Fatal("found a space followed by a newline, which should not be allowed")
 	}
 }
+
+func TestPrettyStableSort(t *testing.T) {
+	json := `{"c":3,"b":3,"a":3,"c":2,"b":2,"a":2,"c":1,"b":1,"a":1}`
+	opts := *DefaultOptions
+	opts.SortKeys = true
+	json = string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if json != `{"a":3,"a":2,"a":1,"b":3,"b":2,"b":1,"c":3,"c":2,"c":1}` {
+		t.Fatal("out of order")
+	}
+}

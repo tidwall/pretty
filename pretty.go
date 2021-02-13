@@ -118,21 +118,27 @@ type pair struct {
 	vstart, vend int
 }
 
-type byKey struct {
+type byKeyVal struct {
 	sorted bool
 	json   []byte
 	pairs  []pair
 }
 
-func (arr *byKey) Len() int {
+func (arr *byKeyVal) Len() int {
 	return len(arr.pairs)
 }
-func (arr *byKey) Less(i, j int) bool {
+func (arr *byKeyVal) Less(i, j int) bool {
 	key1 := arr.json[arr.pairs[i].kstart+1 : arr.pairs[i].kend-1]
 	key2 := arr.json[arr.pairs[j].kstart+1 : arr.pairs[j].kend-1]
-	return string(key1) < string(key2)
+	if string(key1) < string(key2) {
+		return true
+	}
+	if string(key1) > string(key2) {
+		return false
+	}
+	return arr.pairs[i].vstart < arr.pairs[j].vstart
 }
-func (arr *byKey) Swap(i, j int) {
+func (arr *byKeyVal) Swap(i, j int) {
 	arr.pairs[i], arr.pairs[j] = arr.pairs[j], arr.pairs[i]
 	arr.sorted = true
 }
@@ -243,8 +249,8 @@ func sortPairs(json, buf []byte, pairs []pair) []byte {
 	}
 	vstart := pairs[0].vstart
 	vend := pairs[len(pairs)-1].vend
-	arr := byKey{false, json, pairs}
-	sort.Sort(&arr)
+	arr := byKeyVal{false, json, pairs}
+	sort.Stable(&arr)
 	if !arr.sorted {
 		return buf
 	}

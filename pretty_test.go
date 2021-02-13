@@ -455,3 +455,17 @@ func TestPrettyStableSort(t *testing.T) {
 		t.Fatal("out of order")
 	}
 }
+
+func TestPrettyColor(t *testing.T) {
+	json := `"abc\u0020def\nghi"`
+	ret := string(Color([]byte(json), nil))
+	exp := "" +
+		TerminalStyle.String[0] + `"abc` + TerminalStyle.String[1] +
+		TerminalStyle.Escape[0] + `\u0020` + TerminalStyle.Escape[1] +
+		TerminalStyle.String[0] + `def` + TerminalStyle.String[1] +
+		TerminalStyle.Escape[0] + `\n` + TerminalStyle.Escape[1] +
+		TerminalStyle.String[0] + `ghi"` + TerminalStyle.String[1]
+	if ret != exp {
+		t.Fatalf("expected '%s', got '%s'", exp, ret)
+	}
+}

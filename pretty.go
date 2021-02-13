@@ -319,6 +319,7 @@ func appendTabs(buf []byte, prefix, indent string, tabs int) []byte {
 type Style struct {
 	Key, String, Number [2]string
 	True, False, Null   [2]string
+	Escape              [2]string
 	Append              func(dst []byte, c byte) []byte
 }
 
@@ -342,6 +343,7 @@ func init() {
 		True:   [2]string{"\x1B[96m", "\x1B[0m"},
 		False:  [2]string{"\x1B[96m", "\x1B[0m"},
 		Null:   [2]string{"\x1B[91m", "\x1B[0m"},
+		Escape: [2]string{"\x1B[35m", "\x1B[0m"},
 		Append: func(dst []byte, c byte) []byte {
 			if c < ' ' && (c != '\r' && c != '\n' && c != '\t' && c != '\v') {
 				dst = append(dst, "\\u00"...)
@@ -381,8 +383,39 @@ func Color(src []byte, style *Style) []byte {
 				dst = append(dst, style.String[0]...)
 			}
 			dst = apnd(dst, '"')
+			esc := false
+			uesc := 0
 			for i = i + 1; i < len(src); i++ {
-				dst = apnd(dst, src[i])
+				if src[i] == '\\' {
+					if key {
+						dst = append(dst, style.Key[1]...)
+					} else {
+						dst = append(dst, style.String[1]...)
+					}
+					dst = append(dst, style.Escape[0]...)
+					dst = apnd(dst, src[i])
+					esc = true
+					if i+1 < len(src) && src[i+1] == 'u' {
+						uesc = 5
+					} else {
+						uesc = 1
+					}
+				} else if esc {
+					dst = apnd(dst, src[i])
+					if uesc == 1 {
+						esc = false
+						dst = append(dst, style.Escape[1]...)
+						if key {
+							dst = append(dst, style.Key[0]...)
+						} else {
+							dst = append(dst, style.String[0]...)
+						}
+					} else {
+						uesc--
+					}
+				} else {
+					dst = apnd(dst, src[i])
+				}
 				if src[i] == '"' {
 					j := i - 1
 					for ; ; j-- {
@@ -395,7 +428,9 @@ func Color(src []byte, style *Style) []byte {
 					}
 				}
 			}
-			if key {
+			if esc {
+				dst = append(dst, style.Escape[1]...)
+			} else if key {
 				dst = append(dst, style.Key[1]...)
 			} else {
 				dst = append(dst, style.String[1]...)

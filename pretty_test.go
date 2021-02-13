@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -434,5 +435,13 @@ func BenchmarkJSONCompact(t *testing.B) {
 	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		json.Compact(&dst, example1)
+	}
+}
+
+func TestPrettyNoSpaceAfterNewline(t *testing.T) {
+	json := `[{"foo":1,"bar":2},{"foo":3,"bar":4}]`
+	json = string(Pretty([]byte(json)))
+	if strings.Index(json, " \n") != -1 {
+		t.Fatal("found a space followed by a newline, which should not be allowed")
 	}
 }

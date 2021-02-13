@@ -174,7 +174,11 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 				}
 				if n > 0 {
 					nl = len(buf)
-					buf = append(buf, '\n')
+					if buf[nl-1] == ' ' {
+						buf[nl-1] = '\n'
+					} else {
+						buf = append(buf, '\n')
+					}
 				}
 				if buf[len(buf)-1] != open {
 					buf = appendTabs(buf, prefix, indent, tabs)
@@ -193,7 +197,11 @@ func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, 
 			var p pair
 			if pretty {
 				nl = len(buf)
-				buf = append(buf, '\n')
+				if buf[nl-1] == ' ' {
+					buf[nl-1] = '\n'
+				} else {
+					buf = append(buf, '\n')
+				}
 				if open == '{' && sortkeys {
 					p.kstart = i
 					p.vstart = len(buf)

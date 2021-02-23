@@ -420,6 +420,47 @@ func BenchmarkUglyInPlace(t *testing.B) {
 		UglyInPlace(example2)
 	}
 }
+
+var example3 = []byte(`
+{
+  /* COMMENT 1 */
+	"name": {
+		"last": "Sanders", // outer 1
+		"first": "Janet",  // outer 2
+	}, 
+  // COMMENT 2
+	"children": [
+		"Andy", "Carol", "Mike", // outer 3
+	],
+  /* 
+  COMMENT 3
+  */
+	"values": [
+		10.10, true, false, null, "hello", {},
+	],
+	"values2": {},
+	"values3": [],
+	"deep": {"deep":{"deep":[1,2,3,4,5,],}}
+}
+`)
+
+func BenchmarkSpec(t *testing.B) {
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		Ugly(example3)
+	}
+}
+
+func BenchmarkSpecInPlace(t *testing.B) {
+	example4 := []byte(string(example3))
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		UglyInPlace(example4)
+	}
+}
+
 func BenchmarkJSONIndent(t *testing.B) {
 	var dst bytes.Buffer
 	t.ReportAllocs()

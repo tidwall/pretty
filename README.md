@@ -143,14 +143,14 @@ type Options struct {
 
 Benchmarks of Pretty alongside the builtin `encoding/json` Indent/Compact methods.
 ```
-BenchmarkPretty-16            	 1000000	      1034 ns/op	     720 B/op	       2 allocs/op
-BenchmarkPrettySortKeys-16    	  586797	      1983 ns/op	    2848 B/op	      14 allocs/op
-BenchmarkUgly-16              	 4652365	       254 ns/op	     240 B/op	       1 allocs/op
-BenchmarkUglyInPlace-16       	 6481233	       183 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSpec-16              	 3200991	       372 ns/op	     352 B/op	       1 allocs/op
-BenchmarkSpecInPlace-16       	 4214520	       282 ns/op	       0 B/op	       0 allocs/op
-BenchmarkJSONIndent-16        	  450654	      2687 ns/op	    1221 B/op	       0 allocs/op
-BenchmarkJSONCompact-16       	  685111	      1699 ns/op	     442 B/op	       0 allocs/op
+BenchmarkPretty-16           1000000    1034 ns/op    720 B/op     2 allocs/op
+BenchmarkPrettySortKeys-16    586797    1983 ns/op   2848 B/op    14 allocs/op
+BenchmarkUgly-16             4652365     254 ns/op    240 B/op     1 allocs/op
+BenchmarkUglyInPlace-16      6481233     183 ns/op      0 B/op     0 allocs/op
+BenchmarkSpec-16             3200991     372 ns/op    352 B/op     1 allocs/op
+BenchmarkSpecInPlace-16      4214520     282 ns/op      0 B/op     0 allocs/op
+BenchmarkJSONIndent-16        450654    2687 ns/op   1221 B/op     0 allocs/op
+BenchmarkJSONCompact-16       685111    1699 ns/op    442 B/op     0 allocs/op
 ```
 
 *These benchmarks were run on a MacBook Pro 2.4 GHz 8-Core Intel Core i9.*

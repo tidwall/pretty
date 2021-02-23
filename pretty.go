@@ -86,22 +86,15 @@ func ugly(dst, src []byte) []byte {
 
 func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, prefix, indent string, sortkeys bool, tabs, nl, max int) ([]byte, int, int, bool) {
 	for ; i < len(json); i++ {
-		if json[i] <= ' ' {
-			continue
-		}
-		if json[i] == '"' {
-			return appendPrettyString(buf, json, i, nl)
-		}
-		if (json[i] >= '0' && json[i] <= '9') || json[i] == '-' {
-			return appendPrettyNumber(buf, json, i, nl)
-		}
-		if json[i] == '{' {
-			return appendPrettyObject(buf, json, i, '{', '}', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
-		}
-		if json[i] == '[' {
-			return appendPrettyObject(buf, json, i, '[', ']', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
-		}
 		switch json[i] {
+		case '"':
+			return appendPrettyString(buf, json, i, nl)
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			return appendPrettyNumber(buf, json, i, nl)
+		case '{':
+			return appendPrettyObject(buf, json, i, '{', '}', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
+		case '[':
+			return appendPrettyObject(buf, json, i, '[', ']', pretty, width, prefix, indent, sortkeys, tabs, nl, max)
 		case 't':
 			return append(buf, 't', 'r', 'u', 'e'), i + 4, nl, true
 		case 'f':

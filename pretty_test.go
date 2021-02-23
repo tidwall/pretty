@@ -469,3 +469,32 @@ func TestPrettyColor(t *testing.T) {
 		t.Fatalf("expected '%s', got '%s'", exp, ret)
 	}
 }
+
+func TestSpec(t *testing.T) {
+	json := `
+  {  //	hello
+    "c": 3,"b":3, // jello
+    /* SOME
+       LIKE
+       IT
+       HAUT */
+    "d": [ 1, /* 2 */ 3, 4, ],
+  }`
+	expect := `
+  {    	     
+    "c": 3,"b":3,         
+           
+           
+         
+              
+    "d": [ 1,         3, 4  ] 
+  }`
+	out := string(Spec([]byte(json)))
+	if out != expect {
+		t.Fatalf("expected '%s', got '%s'", expect, out)
+	}
+	out = string(SpecInPlace([]byte(json)))
+	if out != expect {
+		t.Fatalf("expected '%s', got '%s'", expect, out)
+	}
+}

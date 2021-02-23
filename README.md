@@ -103,7 +103,7 @@ data := `
     "port": 5432,          // use full email address
     "username": "josh",
     "password": "pass123", // use a hashed password
-  }
+  },
   /* Only SMTP Allowed */
   "emailInfo": {
     "email": "josh@example.com",

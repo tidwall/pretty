@@ -79,46 +79,6 @@ Will format the json to:
 {"name":{"first":"Tom","last":"Anderson"},"age":37,"children":["Sara","Alex","Jack"],"fav.movie":"Deer Hunter","friends":[{"first":"Janet","last":"Murphy","age":44}]}```
 ```
 
-## Spec
-
-Spec cleans comments and trailing commas from input JSON, converting it to
-valid JSON per the official spec: https://tools.ietf.org/html/rfc8259
-
-The resulting JSON will always be the same length as the input and it will
-include all of the same line breaks at matching offsets. This is to ensure
-the result can be later processed by a external parser and that that
-parser will report messages or errors with the correct offsets.
-
-The following example uses a JSON document that has comments and trailing
-commas and converts it prior to unmarshalling to using the standard Go
-JSON library.
-
-```go
-
-data := `
-{
-  /* Dev Machine */
-  "dbInfo": {
-    "host": "localhost",
-    "port": 5432,          // use full email address
-    "username": "josh",
-    "password": "pass123", // use a hashed password
-  },
-  /* Only SMTP Allowed */
-  "emailInfo": {
-    "email": "josh@example.com",
-    "password": "pass123",
-    "smtp": "smpt.example.com",
-  }
-}
-`
-
-err := json.Unmarshal(pretty.Spec(data), &config)
-
-```
-
-
-
 ## Customized output
 
 There's a `PrettyOptions(json, opts)` function which allows for customizing the output with the following options:

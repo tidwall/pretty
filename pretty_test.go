@@ -492,7 +492,7 @@ func TestPrettyStableSort(t *testing.T) {
 	opts := *DefaultOptions
 	opts.SortKeys = true
 	json = string(Ugly(PrettyOptions([]byte(json), &opts)))
-	if json != `{"a":3,"a":2,"a":1,"b":3,"b":2,"b":1,"c":3,"c":2,"c":1}` {
+	if json != `{"a":1,"a":2,"a":3,"b":1,"b":2,"b":3,"c":1,"c":2,"c":3}` {
 		t.Fatal("out of order")
 	}
 }
@@ -537,5 +537,24 @@ func TestSpec(t *testing.T) {
 	out = string(SpecInPlace([]byte(json)))
 	if out != expect {
 		t.Fatalf("expected '%s', got '%s'", expect, out)
+	}
+}
+
+func TestStableSort10(t *testing.T) {
+	expect := `{"key":"abc","key":"bbb","key":"rrr","key":"value","key3":3}`
+	jsons := []string{
+		`{"key3":3,"key":"abc","key":"value","key":"rrr","key":"bbb"}`,
+		`{"key":"abc","key":"bbb","key":"value","key3":3,"key":"rrr"}`,
+		`{"key":"bbb","key":"value","key":"rrr","key3":3,"key":"abc"}`,
+		`{"key3":3,"key":"abc","key":"bbb","key":"value","key":"rrr"}`,
+		`{"key3":3,"key":"abc","key":"bbb","key":"value","key":"rrr"}`,
+	}
+	opts := *DefaultOptions
+	opts.SortKeys = true
+	for _, json := range jsons {
+		json = string(Ugly(PrettyOptions([]byte(json), &opts)))
+		if json != expect {
+			t.Fatalf("expected '%s', got '%s'", expect, json)
+		}
 	}
 }

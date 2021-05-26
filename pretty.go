@@ -1,6 +1,7 @@
 package pretty
 
 import (
+	"bytes"
 	"encoding/json"
 	"sort"
 	"strconv"
@@ -123,6 +124,7 @@ type pair struct {
 type byKeyVal struct {
 	sorted bool
 	json   []byte
+	buf    []byte
 	pairs  []pair
 }
 
@@ -182,20 +184,22 @@ func getjtype(v []byte) jtype {
 }
 
 func (arr *byKeyVal) isLess(i, j int, kind byKind) bool {
+	k1 := arr.json[arr.pairs[i].kstart:arr.pairs[i].kend]
+	k2 := arr.json[arr.pairs[j].kstart:arr.pairs[j].kend]
 	var v1, v2 []byte
 	if kind == byKey {
-		v1 = arr.json[arr.pairs[i].kstart:arr.pairs[i].kend]
-		v2 = arr.json[arr.pairs[j].kstart:arr.pairs[j].kend]
+		v1 = k1
+		v2 = k2
 	} else {
-		println(arr.pairs[i].vstart, arr.pairs[i].vend)
-		v1 = arr.json[arr.pairs[i].vstart:arr.pairs[i].vend]
-		println(string(v1))
-		println(arr.pairs[j].vstart, arr.pairs[j].vend)
-		v2 = arr.json[arr.pairs[j].vstart:arr.pairs[j].vend]
-		println(string(v2))
-		println("----")
+		v1 = bytes.TrimSpace(arr.buf[arr.pairs[i].vstart:arr.pairs[i].vend])
+		v2 = bytes.TrimSpace(arr.buf[arr.pairs[j].vstart:arr.pairs[j].vend])
+		if len(v1) >= len(k1)+1 {
+			v1 = bytes.TrimSpace(v1[len(k1)+1:])
+		}
+		if len(v2) >= len(k2)+1 {
+			v2 = bytes.TrimSpace(v2[len(k2)+1:])
+		}
 	}
-
 	t1 := getjtype(v1)
 	t2 := getjtype(v2)
 	if t1 < t2 {
@@ -338,7 +342,7 @@ func sortPairs(json, buf []byte, pairs []pair) []byte {
 	}
 	vstart := pairs[0].vstart
 	vend := pairs[len(pairs)-1].vend
-	arr := byKeyVal{false, json, pairs}
+	arr := byKeyVal{false, json, buf, pairs}
 	sort.Stable(&arr)
 	if !arr.sorted {
 		return buf

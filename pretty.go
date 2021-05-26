@@ -1,7 +1,9 @@
 package pretty
 
 import (
+	"encoding/json"
 	"sort"
+	"strconv"
 )
 
 // Options is Pretty options
@@ -128,19 +130,106 @@ func (arr *byKeyVal) Len() int {
 	return len(arr.pairs)
 }
 func (arr *byKeyVal) Less(i, j int) bool {
-	key1 := arr.json[arr.pairs[i].kstart+1 : arr.pairs[i].kend-1]
-	key2 := arr.json[arr.pairs[j].kstart+1 : arr.pairs[j].kend-1]
-	if string(key1) < string(key2) {
+	if arr.isLess(i, j, byKey) {
 		return true
 	}
-	if string(key1) > string(key2) {
+	if arr.isLess(j, i, byKey) {
 		return false
 	}
-	return arr.pairs[i].vstart < arr.pairs[j].vstart
+	return arr.isLess(i, j, byVal)
 }
 func (arr *byKeyVal) Swap(i, j int) {
 	arr.pairs[i], arr.pairs[j] = arr.pairs[j], arr.pairs[i]
 	arr.sorted = true
+}
+
+type byKind int
+
+const (
+	byKey byKind = 0
+	byVal byKind = 1
+)
+
+type jtype int
+
+const (
+	jnull jtype = iota
+	jfalse
+	jnumber
+	jstring
+	jtrue
+	jjson
+)
+
+func getjtype(v []byte) jtype {
+	if len(v) == 0 {
+		return jnull
+	}
+	switch v[0] {
+	case '"':
+		return jstring
+	case 'f':
+		return jfalse
+	case 't':
+		return jtrue
+	case 'n':
+		return jnull
+	case '[', '{':
+		return jjson
+	default:
+		return jnumber
+	}
+}
+
+func (arr *byKeyVal) isLess(i, j int, kind byKind) bool {
+	var v1, v2 []byte
+	if kind == byKey {
+		v1 = arr.json[arr.pairs[i].kstart:arr.pairs[i].kend]
+		v2 = arr.json[arr.pairs[j].kstart:arr.pairs[j].kend]
+	} else {
+		println(arr.pairs[i].vstart, arr.pairs[i].vend)
+		v1 = arr.json[arr.pairs[i].vstart:arr.pairs[i].vend]
+		println(string(v1))
+		println(arr.pairs[j].vstart, arr.pairs[j].vend)
+		v2 = arr.json[arr.pairs[j].vstart:arr.pairs[j].vend]
+		println(string(v2))
+		println("----")
+	}
+
+	t1 := getjtype(v1)
+	t2 := getjtype(v2)
+	if t1 < t2 {
+		return true
+	}
+	if t1 > t2 {
+		return false
+	}
+	if t1 == jstring {
+		s1 := parsestr(v1)
+		s2 := parsestr(v2)
+		return string(s1) < string(s2)
+	}
+	if t1 == jnumber {
+		n1, _ := strconv.ParseFloat(string(v1), 64)
+		n2, _ := strconv.ParseFloat(string(v2), 64)
+		return n1 < n2
+	}
+	return string(v1) < string(v2)
+
+}
+
+func parsestr(s []byte) []byte {
+	for i := 1; i < len(s); i++ {
+		if s[i] == '\\' {
+			var str string
+			json.Unmarshal(s, &str)
+			return []byte(str)
+		}
+		if s[i] == '"' {
+			return s[1:i]
+		}
+	}
+	return nil
 }
 
 func appendPrettyObject(buf, json []byte, i int, open, close byte, pretty bool, width int, prefix, indent string, sortkeys bool, tabs, nl, max int) ([]byte, int, int, bool) {

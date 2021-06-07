@@ -558,3 +558,14 @@ func TestStableSort10(t *testing.T) {
 		}
 	}
 }
+
+func TestNaN(t *testing.T) {
+	vals := []string{"NaN", "nan", "Nan", "nAn", "inf", "Inf", "-inf", "+Inf"}
+	for _, val := range vals {
+		json := `{"num":` + val + `}`
+		res := string(Ugly(Pretty([]byte(json))))
+		if res != json {
+			t.Fatalf("expected '%s', got '%s'", json, res)
+		}
+	}
+}

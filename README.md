@@ -1,6 +1,6 @@
 # Pretty
 
-[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/tidwall/pretty) 
+[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/tidwall/pretty)
 
 Pretty is a Go package that provides [fast](#performance) methods for formatting JSON for human readability, or to compact JSON for smaller payloads.
 
@@ -57,7 +57,7 @@ Will format the json to:
 
 ## Color
 
-Color will colorize the json for outputing to the screen. 
+Color will colorize the json for outputing to the screen.
 
 ```go
 result = pretty.Color(json, nil)
@@ -76,7 +76,7 @@ result = pretty.Ugly(example)
 Will format the json to:
 
 ```json
-{"name":{"first":"Tom","last":"Anderson"},"age":37,"children":["Sara","Alex","Jack"],"fav.movie":"Deer Hunter","friends":[{"first":"Janet","last":"Murphy","age":44}]}```
+{"name":{"first":"Tom","last":"Anderson"},"age":37,"children":["Sara","Alex","Jack"],"fav.movie":"Deer Hunter","friends":[{"first":"Janet","last":"Murphy","age":44}]}
 ```
 
 ## Customized output

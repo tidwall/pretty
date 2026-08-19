@@ -9,7 +9,7 @@ import (
 
 // Options is Pretty options
 type Options struct {
-	// Width is an max column width for single line arrays
+	// Width is a max column width for single line arrays
 	// Default is 80
 	Width int
 	// Prefix is a prefix for all lines
@@ -27,7 +27,7 @@ type Options struct {
 var DefaultOptions = &Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
 
 // Pretty converts the input json into a more human readable format where each
-// element is on it's own line with clear indentation.
+// element is on its own line with clear indentation.
 func Pretty(json []byte) []byte { return PrettyOptions(json, nil) }
 
 // PrettyOptions is like Pretty but with customized options.
@@ -459,7 +459,7 @@ func init() {
 	}
 }
 
-// Color will colorize the json. The style parma is used for customizing
+// Color will colorize the json. The style param is used for customizing
 // the colors. Passing nil to the style param will use the default
 // TerminalStyle.
 func Color(src []byte, style *Style) []byte {

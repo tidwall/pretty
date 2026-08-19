@@ -569,3 +569,17 @@ func TestNaN(t *testing.T) {
 		}
 	}
 }
+
+func TestColorCustomStyle(t *testing.T) {
+	customStyle := &Style{
+		Key:    [2]string{"<k>", "</k>"},
+		String: [2]string{"<s>", "</s>"},
+		Number: [2]string{"<n>", "</n>"},
+	}
+	res := Color([]byte(`{"a":1,"b":"c"}`), customStyle)
+	expected := `{<k>"a"</k>:<n>1</n>,<k>"b"</k>:<s>"c"</s>}`
+	if string(res) != expected {
+		t.Fatalf("expected %q, got %q", expected, string(res))
+	}
+}
+

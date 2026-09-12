@@ -634,8 +634,8 @@ func spec(src, dst []byte) []byte {
 				if src[i+1] == '*' {
 					dst = append(dst, ' ', ' ')
 					i += 2
-					for ; i < len(src)-1; i++ {
-						if src[i] == '*' && src[i+1] == '/' {
+					for ; i < len(src); i++ {
+						if i+1 < len(src) && src[i] == '*' && src[i+1] == '/' {
 							dst = append(dst, ' ', ' ')
 							i++
 							break

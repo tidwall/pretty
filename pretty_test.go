@@ -569,3 +569,23 @@ func TestNaN(t *testing.T) {
 		}
 	}
 }
+
+func TestSpecUnterminatedBlockCommentOffsets(t *testing.T) {
+	for _, input := range []string{"/*", "/*a", "/*abc*", "/*a\n", "/*a\r\n", "/*a\t", "{} /*a\n"} {
+		for name, convert := range map[string]func([]byte) []byte{"Spec": Spec, "SpecInPlace": SpecInPlace} {
+			t.Run(name+"/"+input, func(t *testing.T) {
+				output := convert([]byte(input))
+				if len(output) != len(input) {
+					t.Fatalf("length changed from %d to %d: %q", len(input), len(output), output)
+				}
+				for i, c := range []byte(input) {
+					if c == '\n' || c == '\r' || c == '\t' {
+						if output[i] != c {
+							t.Errorf("whitespace at offset %d changed", i)
+						}
+					}
+				}
+			})
+		}
+	}
+}

@@ -51,6 +51,23 @@ func assertEqual(t *testing.T, a, b interface{}) {
 	}
 }
 
+func TestPrettyInvalidJSONUnchanged(t *testing.T) {
+	in := []byte("this is not a valid JSON")
+	out := Pretty(in)
+	if !bytes.Equal(out, in) {
+		t.Fatalf("invalid JSON should be unchanged\n\tgot %q\n\twant %q", out, in)
+	}
+	// First non-space byte is 't' — must not be rewritten as JSON true.
+	if bytes.Equal(bytes.TrimSpace(out), []byte("true")) {
+		t.Fatal("invalid JSON starting with 't' must not format as true")
+	}
+	in = []byte("false start")
+	out = Pretty(in)
+	if !bytes.Equal(out, in) {
+		t.Fatalf("invalid JSON should be unchanged\n\tgot %q\n\twant %q", out, in)
+	}
+}
+
 func TestPretty(t *testing.T) {
 	pretty := Pretty(Ugly(Pretty([]byte(example1))))
 	assertEqual(t, j(pretty), j(pretty))

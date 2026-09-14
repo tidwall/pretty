@@ -26,6 +26,39 @@ type Options struct {
 // DefaultOptions is the default options for pretty formats.
 var DefaultOptions = &Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
 
+// prettyable reports whether b should be formatted.
+// Whitespace-only input stays on the existing empty-output path.
+// Bare text that is not a JSON value (objects, arrays, strings, numbers,
+// true/false/null, or NaN/Inf) is left unchanged so Pretty does not rewrite
+// e.g. "this is not a valid JSON" into "true".
+func prettyable(b []byte) bool {
+	i := 0
+	for i < len(b) && b[i] <= ' ' {
+		i++
+	}
+	if i == len(b) {
+		return true
+	}
+	c := b[i]
+	if c == '{' || c == '[' || c == '"' || c == '-' || (c >= '0' && c <= '9') {
+		return true
+	}
+	if isNaNOrInf(b[i:]) {
+		return true
+	}
+	rest := b[i:]
+	for _, lit := range []string{"true", "false", "null"} {
+		if bytes.HasPrefix(rest, []byte(lit)) {
+			j := i + len(lit)
+			for j < len(b) && b[j] <= ' ' {
+				j++
+			}
+			return j == len(b)
+		}
+	}
+	return false
+}
+
 // Pretty converts the input json into a more human readable format where each
 // element is on it's own line with clear indentation.
 func Pretty(json []byte) []byte { return PrettyOptions(json, nil) }
@@ -34,6 +67,9 @@ func Pretty(json []byte) []byte { return PrettyOptions(json, nil) }
 func PrettyOptions(json []byte, opts *Options) []byte {
 	if opts == nil {
 		opts = DefaultOptions
+	}
+	if !prettyable(json) {
+		return json
 	}
 	buf := make([]byte, 0, len(json))
 	if len(opts.Prefix) != 0 {
@@ -115,11 +151,17 @@ func appendPrettyAny(buf, json []byte, i int, pretty bool, width int, prefix, in
 		}
 		switch json[i] {
 		case 't':
-			return append(buf, 't', 'r', 'u', 'e'), i + 4, nl, true
+			if i+4 <= len(json) && json[i] == 't' && json[i+1] == 'r' && json[i+2] == 'u' && json[i+3] == 'e' {
+				return append(buf, 't', 'r', 'u', 'e'), i + 4, nl, true
+			}
 		case 'f':
-			return append(buf, 'f', 'a', 'l', 's', 'e'), i + 5, nl, true
+			if i+5 <= len(json) && json[i] == 'f' && json[i+1] == 'a' && json[i+2] == 'l' && json[i+3] == 's' && json[i+4] == 'e' {
+				return append(buf, 'f', 'a', 'l', 's', 'e'), i + 5, nl, true
+			}
 		case 'n':
-			return append(buf, 'n', 'u', 'l', 'l'), i + 4, nl, true
+			if i+4 <= len(json) && json[i] == 'n' && json[i+1] == 'u' && json[i+2] == 'l' && json[i+3] == 'l' {
+				return append(buf, 'n', 'u', 'l', 'l'), i + 4, nl, true
+			}
 		}
 	}
 	return buf, i, nl, true

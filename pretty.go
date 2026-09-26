@@ -69,16 +69,13 @@ func ugly(dst, src []byte) []byte {
 			if src[i] == '"' {
 				for i = i + 1; i < len(src); i++ {
 					dst = append(dst, src[i])
-					if src[i] == '"' {
-						j := i - 1
-						for ; ; j-- {
-							if src[j] != '\\' {
-								break
-							}
+					if src[i] == '\\' {
+						i++
+						if i < len(src) {
+							dst = append(dst, src[i])
 						}
-						if (j-i)%2 != 0 {
-							break
-						}
+					} else if src[i] == '"' {
+						break
 					}
 				}
 			}

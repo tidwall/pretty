@@ -569,3 +569,28 @@ func TestNaN(t *testing.T) {
 		}
 	}
 }
+
+func u(t *testing.T, js interface{}) {
+	src := fmt.Sprintf("%s", js)
+	ugly := UglyInPlace([]byte(src))
+	var buf bytes.Buffer
+	err := json.Compact(&buf, []byte(src))
+	if err != nil {
+		panic(err)
+	}
+	if buf.String() != string(ugly) {
+		t.Fatalf("for '%s', expected '%s', got '%s'", src, buf.Bytes(), ugly)
+	}
+}
+
+func TestUglyInPlaceEscapedStrings(t *testing.T) {
+	u(t, `  ["\\", "a b"]`)
+	u(t, `  ["\\\\", "a b"]`)
+	u(t, "\t\n"+`  ["\\\\", "a b"]`)
+	u(t, ` ["a\" b", "c d"]`)
+	u(t, ` ["\\\" x", "a b"]`)
+	u(t, `   ["\\\" x", "a b"]`)
+	u(t, `  {"a":"\\", "b":"c d"}`)
+	u(t, ` {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
+	u(t, `  {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
+}

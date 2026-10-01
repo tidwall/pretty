@@ -594,3 +594,84 @@ func TestUglyInPlaceEscapedStrings(t *testing.T) {
 	u(t, ` {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 	u(t, `  {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 }
+
+func TestSortFunc(t *testing.T) {
+	// Reverse alphabetical order
+	json := `{"a":1,"b":2,"c":3}`
+	opts := *DefaultOptions
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		return string(a) > string(b)
+	}
+	res := string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if res != `{"c":3,"b":2,"a":1}` {
+		t.Fatalf("expected '{\"c\":3,\"b\":2,\"a\":1}', got '%s'", res)
+	}
+
+	// Priority sorting: "id" first, then "name", then alphabetical
+	order := map[string]int{"id": 0, "name": 1}
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		o1, ok1 := order[string(a)]
+		o2, ok2 := order[string(b)]
+		if ok1 && ok2 {
+			return o1 < o2
+		}
+		if ok1 {
+			return true
+		}
+		if ok2 {
+			return false
+		}
+		return string(a) < string(b)
+	}
+	json = `{"zebra":1,"name":"bob","id":99,"alpha":2}`
+	res = string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if res != `{"id":99,"name":"bob","alpha":2,"zebra":1}` {
+		t.Fatalf("expected '{\"id\":99,\"name\":\"bob\",\"alpha\":2,\"zebra\":1}', got '%s'", res)
+	}
+
+	// Level-based sorting: sort only level 0, leave level 1 in original order
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		if level == 0 {
+			return string(a) < string(b)
+		}
+		return false
+	}
+	json = `{"z":{"b":2,"a":1},"a":{"d":4,"c":3}}`
+	res = string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if res != `{"a":{"d":4,"c":3},"z":{"b":2,"a":1}}` {
+		t.Fatalf("expected '{\"a\":{\"d\":4,\"c\":3},\"z\":{\"b\":2,\"a\":1}}', got '%s'", res)
+	}
+
+	// Stable sort with duplicate keys when using SortFunc
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		return string(a) < string(b)
+	}
+	json = `{"b":2,"b":1,"a":2,"a":1}`
+	res = string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if res != `{"a":1,"a":2,"b":1,"b":2}` {
+		t.Fatalf("expected '{\"a\":1,\"a\":2,\"b\":1,\"b\":2}', got '%s'", res)
+	}
+
+	// Escaped keys
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		return string(a) < string(b)
+	}
+	json = `{"b\n2":2,"a\n1":1}`
+	res = string(Ugly(PrettyOptions([]byte(json), &opts)))
+	if res != `{"a\n1":1,"b\n2":2}` {
+		t.Fatalf("expected '{\"a\\n1\":1,\"b\\n2\":2}', got '%s'", res)
+	}
+}
+
+func BenchmarkPrettySortFunc(t *testing.B) {
+	opts := *DefaultOptions
+	opts.SortFunc = func(level int, a, b []byte) bool {
+		return string(a) < string(b)
+	}
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		PrettyOptions(example1, &opts)
+	}
+}
+

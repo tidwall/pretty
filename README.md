@@ -97,6 +97,9 @@ type Options struct {
 	// SortKeys will sort the keys alphabetically
 	// Default is false
 	SortKeys bool
+	// SortFunc is a function that compares two keys at a given nesting level.
+	// Default is nil
+	SortFunc func(level int, a, b []byte) bool
 }
 ```
 ## Performance

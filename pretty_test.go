@@ -594,3 +594,104 @@ func TestUglyInPlaceEscapedStrings(t *testing.T) {
 	u(t, ` {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 	u(t, `  {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 }
+
+func TestWidthObjects(t *testing.T) {
+	input := `{"a": 1, "b": "hello"}`
+	// Default options: WidthObjects is false, so it formats multi-line
+	resDefault := string(Pretty([]byte(input)))
+	expectedDefault := "{\n  \"a\": 1,\n  \"b\": \"hello\"\n}\n"
+	assertEqual(t, resDefault, expectedDefault)
+
+	// Enabled WidthObjects: short object formats on a single line
+	opts := *DefaultOptions
+	opts.WidthObjects = true
+	resEnabled := string(PrettyOptions([]byte(input), &opts))
+	expectedEnabled := "{\"a\": 1, \"b\": \"hello\"}\n"
+	assertEqual(t, resEnabled, expectedEnabled)
+
+	// Long object exceeding width formats multi-line even when WidthObjects is true
+	optsNarrow := *DefaultOptions
+	optsNarrow.Width = 20
+	optsNarrow.WidthObjects = true
+	resNarrow := string(PrettyOptions([]byte(input), &optsNarrow))
+	assertEqual(t, resNarrow, expectedDefault)
+}
+
+func TestWidthObjectsIssue16(t *testing.T) {
+	input := `{
+  "shortArray": [1, 2, 3, 4],
+  "shortObject": {
+    "code": "some_code",
+    "value": 13262234
+  },
+  "shortNested": [
+    {
+      "something": "any value",
+      "stuff": 12345
+    }
+  ]
+}`
+	opts := *DefaultOptions
+	opts.WidthObjects = true
+	res := string(PrettyOptions([]byte(input), &opts))
+	expected := "{\n" +
+		"  \"shortArray\": [1, 2, 3, 4],\n" +
+		"  \"shortObject\": {\"code\": \"some_code\", \"value\": 13262234},\n" +
+		"  \"shortNested\": [{\"something\": \"any value\", \"stuff\": 12345}]\n" +
+		"}\n"
+	assertEqual(t, res, expected)
+}
+
+func TestWidthObjectsNestedInArray(t *testing.T) {
+	input := `[{"id": 1, "name": "alice"}, {"id": 2, "name": "bob"}]`
+	opts := *DefaultOptions
+	opts.WidthObjects = true
+
+	// Fits on single line
+	opts.Width = 80
+	res := string(PrettyOptions([]byte(input), &opts))
+	expected := `[{"id": 1, "name": "alice"}, {"id": 2, "name": "bob"}]` + "\n"
+	assertEqual(t, res, expected)
+
+	// Array exceeds width, but each object fits on a single line
+	opts.Width = 35
+	res2 := string(PrettyOptions([]byte(input), &opts))
+	expected2 := "[\n" +
+		"  {\"id\": 1, \"name\": \"alice\"},\n" +
+		"  {\"id\": 2, \"name\": \"bob\"}\n" +
+		"]\n"
+	assertEqual(t, res2, expected2)
+}
+
+func TestWidthObjectsSortKeys(t *testing.T) {
+	input := `{"z": 10, "a": 20, "m": 30}`
+	opts := *DefaultOptions
+	opts.WidthObjects = true
+	opts.SortKeys = true
+
+	res := string(PrettyOptions([]byte(input), &opts))
+	expected := "{\"a\": 20, \"m\": 30, \"z\": 10}\n"
+	assertEqual(t, res, expected)
+
+	// Nested object with SortKeys
+	nestedInput := `{"b": {"y": 1, "x": 2}, "a": [3, 2, 1]}`
+	resNested := string(PrettyOptions([]byte(nestedInput), &opts))
+	expectedNested := "{\"a\": [3, 2, 1], \"b\": {\"x\": 2, \"y\": 1}}\n"
+	assertEqual(t, resNested, expectedNested)
+}
+
+func TestWidthObjectsEdgeCases(t *testing.T) {
+	opts := *DefaultOptions
+	opts.WidthObjects = true
+
+	// Empty object
+	assertEqual(t, string(PrettyOptions([]byte(`{}`), &opts)), "{}\n")
+
+	// Object with empty array and empty object
+	assertEqual(t, string(PrettyOptions([]byte(`{"arr": [], "obj": {}}`), &opts)), "{\"arr\": [], \"obj\": {}}\n")
+
+	// Nested objects within single line
+	nested := `{"outer": {"middle": {"inner": 42}}}`
+	assertEqual(t, string(PrettyOptions([]byte(nested), &opts)), "{\"outer\": {\"middle\": {\"inner\": 42}}}\n")
+}
+

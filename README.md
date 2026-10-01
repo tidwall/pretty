@@ -97,6 +97,9 @@ type Options struct {
 	// SortKeys will sort the keys alphabetically
 	// Default is false
 	SortKeys bool
+	// WidthObjects will format short objects on a single line if they fit within Width
+	// Default is false
+	WidthObjects bool
 }
 ```
 ## Performance

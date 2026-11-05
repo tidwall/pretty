@@ -511,6 +511,24 @@ func TestPrettyColor(t *testing.T) {
 	}
 }
 
+func TestColorEscapedBackslash(t *testing.T) {
+	style := &Style{
+		String: [2]string{"<string>", "</string>"},
+		Key:    [2]string{"<key>", "</key>"},
+		Escape: [2]string{"<escape>", "</escape>"},
+	}
+	for _, tt := range []struct{ src, want string }{
+		{`"a\\b"`, `<string>"a</string><escape>\\</escape><string>b"</string>`},
+		{`"a\\"`, `<string>"a</string><escape>\\</escape><string>"</string>`},
+		{`"a\\\"b"`, `<string>"a</string><escape>\\</escape><string></string><escape>\"</escape><string>b"</string>`},
+		{`{"a\\b":0}`, `{<key>"a</key><escape>\\</escape><key>b"</key>:0}`},
+	} {
+		if got := string(Color([]byte(tt.src), style)); got != tt.want {
+			t.Errorf("Color(%s) = %q, want %q", tt.src, got, tt.want)
+		}
+	}
+}
+
 func TestSpec(t *testing.T) {
 	json := `
   {  //	hello

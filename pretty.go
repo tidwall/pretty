@@ -487,7 +487,7 @@ func Color(src []byte, style *Style) []byte {
 			esc := false
 			uesc := 0
 			for i = i + 1; i < len(src); i++ {
-				if src[i] == '\\' {
+				if src[i] == '\\' && !esc {
 					if key {
 						dst = append(dst, style.Key[1]...)
 					} else {

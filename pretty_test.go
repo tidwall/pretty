@@ -594,3 +594,15 @@ func TestUglyInPlaceEscapedStrings(t *testing.T) {
 	u(t, ` {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 	u(t, `  {"\\":"a b", "nested": [{"quote":"\\\"", "text":"c d"}]}`)
 }
+
+func TestIssue31(t *testing.T) {
+	var s Style
+	s.Brackets = [2]string{"0", "1"}
+	s.String = [2]string{"2", "3"}
+	s.Escape = [2]string{"4", "5"}
+	r := string(Color([]byte(`["a\\a","a\\","\\a","\\","a\u0000a"]`), &s))
+	e := `0[12"a34\\52a"3,2"a34\\52"3,2"34\\52a"3,2"34\\52"3,2"a34\u000052a"30]1`
+	if r != e {
+		t.Fatalf("expected\n'%s'\ngot\n'%s'", e, r)
+	}
+}

@@ -484,10 +484,20 @@ func Color(src []byte, style *Style) []byte {
 				dst = append(dst, style.String[0]...)
 			}
 			dst = apnd(dst, '"')
-			esc := false
-			uesc := 0
+			esc := 0
 			for i = i + 1; i < len(src); i++ {
-				if src[i] == '\\' {
+				if esc > 0 {
+					dst = apnd(dst, src[i])
+					esc--
+					if esc == 0 {
+						dst = append(dst, style.Escape[1]...)
+						if key {
+							dst = append(dst, style.Key[0]...)
+						} else {
+							dst = append(dst, style.String[0]...)
+						}
+					}
+				} else if src[i] == '\\' {
 					if key {
 						dst = append(dst, style.Key[1]...)
 					} else {
@@ -495,24 +505,10 @@ func Color(src []byte, style *Style) []byte {
 					}
 					dst = append(dst, style.Escape[0]...)
 					dst = apnd(dst, src[i])
-					esc = true
 					if i+1 < len(src) && src[i+1] == 'u' {
-						uesc = 5
+						esc = 5
 					} else {
-						uesc = 1
-					}
-				} else if esc {
-					dst = apnd(dst, src[i])
-					if uesc == 1 {
-						esc = false
-						dst = append(dst, style.Escape[1]...)
-						if key {
-							dst = append(dst, style.Key[0]...)
-						} else {
-							dst = append(dst, style.String[0]...)
-						}
-					} else {
-						uesc--
+						esc = 1
 					}
 				} else {
 					dst = apnd(dst, src[i])
@@ -529,7 +525,7 @@ func Color(src []byte, style *Style) []byte {
 					}
 				}
 			}
-			if esc {
+			if esc > 0 {
 				dst = append(dst, style.Escape[1]...)
 			} else if key {
 				dst = append(dst, style.Key[1]...)

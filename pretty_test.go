@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -368,21 +369,30 @@ func TestBig(t *testing.T) {
 }
 
 func TestColor(t *testing.T) {
-	res := Color(Pretty([]byte(`
+	json := string(Pretty([]byte(`
 {"hello":"world","what":123,
 "arr":["1","2",1,2,true,false,null],
-"obj":{"key1":null,"ar`+"\x1B[36m"+`Cyanr2":[1,2,3,"123","456"]}}
-	`)), nil)
-	if string(res) != `[1m{[0m
-  [1m[94m"hello"[0m[1m:[0m [32m"world"[0m[1m,[0m
-  [1m[94m"what"[0m[1m:[0m [33m123[0m[1m,[0m
-  [1m[94m"arr"[0m[1m:[0m [1m[[0m[32m"1"[0m, [32m"2"[0m, [33m1[0m, [33m2[0m, [36mtrue[0m, [36mfalse[0m, [2mnull[0m[1m][0m[1m,[0m
-  [1m[94m"obj"[0m[1m:[0m [1m{[0m
-    [1m[94m"key1"[0m[1m:[0m [2mnull[0m[1m,[0m
-    [1m[94m"ar\u001b[36mCyanr2"[0m[1m:[0m [1m[[0m[33m1[0m, [33m2[0m, [33m3[0m, [32m"123"[0m, [32m"456"[0m[1m][0m
-  [1m}[0m
-[1m}[0m
-` {
+"obj":{"key1":null,"ar` + "\x1B[36m" + `cyan` + "\x1B[0m" + `ray":[1,2,3,"123","456"]}}
+	`)))
+	res := string(Color([]byte(json), nil))
+	res0 := strconv.Quote(res)
+	if res0 != `"\x1b[1m{\x1b[0m\n  `+
+		`\x1b[1m\x1b[94m\"hello\"\x1b[0m\x1b[1m:\x1b[0m `+
+		`\x1b[32m\"world\"\x1b[0m\x1b[1m,\x1b[0m\n  `+
+		`\x1b[1m\x1b[94m\"what\"\x1b[0m\x1b[1m:\x1b[0m `+
+		`\x1b[33m123\x1b[0m\x1b[1m,\x1b[0m\n  `+
+		`\x1b[1m\x1b[94m\"arr\"\x1b[0m\x1b[1m:\x1b[0m `+
+		`\x1b[1m[\x1b[0m\x1b[32m\"1\"\x1b[0m, `+
+		`\x1b[32m\"2\"\x1b[0m, \x1b[33m1\x1b[0m, \x1b[33m2\x1b[0m, `+
+		`\x1b[36mtrue\x1b[0m, \x1b[36mfalse\x1b[0m, `+
+		`\x1b[2mnull\x1b[0m\x1b[1m]\x1b[0m\x1b[1m,\x1b[0m\n  `+
+		`\x1b[1m\x1b[94m\"obj\"\x1b[0m\x1b[1m:\x1b[0m \x1b[1m{\x1b[0m `+
+		`\x1b[1m\x1b[94m\"key1\"\x1b[0m\x1b[1m:\x1b[0m `+
+		`\x1b[2mnull\x1b[0m\x1b[1m,\x1b[0m `+
+		`\x1b[1m\x1b[94m\"ar\\u001b[36mcyan\\u001b[0mray\"\x1b[0m\x1b[1m:\x1b[0m `+
+		`\x1b[1m[\x1b[0m\x1b[33m1\x1b[0m, \x1b[33m2\x1b[0m, \x1b[33m3\x1b[0m, `+
+		`\x1b[32m\"123\"\x1b[0m, \x1b[32m\"456\"\x1b[0m\x1b[1m]\x1b[0m `+
+		`\x1b[1m}\x1b[0m\n\x1b[1m}\x1b[0m\n"` {
 		t.Fatal("invalid output")
 	}
 }
@@ -604,5 +614,24 @@ func TestIssue31(t *testing.T) {
 	e := `0[12"a34\\52a"3,2"a34\\52"3,2"34\\52a"3,2"34\\52"3,2"a34\u000052a"30]1`
 	if r != e {
 		t.Fatalf("expected\n'%s'\ngot\n'%s'", e, r)
+	}
+}
+
+func TestSingleLineObjects(t *testing.T) {
+	json := `{"shortArray": [1, 2, 3, 4],
+	  "shortObject": {"code:": "some_code","value": 13262234
+	  },
+	  "shortNested": [{
+	      "something": "any value","stuff": 12345}
+	  ]
+	}`
+	json = string(Pretty([]byte(json)))
+	if json != `{
+  "shortArray": [1, 2, 3, 4],
+  "shortObject": { "code:": "some_code", "value": 13262234 },
+  "shortNested": [{ "something": "any value", "stuff": 12345 }]
+}
+` {
+		t.Fatalf("invalid output")
 	}
 }

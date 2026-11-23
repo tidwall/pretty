@@ -386,12 +386,12 @@ func TestColor(t *testing.T) {
 		`\x1b[32m\"2\"\x1b[0m, \x1b[33m1\x1b[0m, \x1b[33m2\x1b[0m, `+
 		`\x1b[36mtrue\x1b[0m, \x1b[36mfalse\x1b[0m, `+
 		`\x1b[2mnull\x1b[0m\x1b[1m]\x1b[0m\x1b[1m,\x1b[0m\n  `+
-		`\x1b[1m\x1b[94m\"obj\"\x1b[0m\x1b[1m:\x1b[0m \x1b[1m{\x1b[0m `+
+		`\x1b[1m\x1b[94m\"obj\"\x1b[0m\x1b[1m:\x1b[0m \x1b[1m{\x1b[0m`+
 		`\x1b[1m\x1b[94m\"key1\"\x1b[0m\x1b[1m:\x1b[0m `+
 		`\x1b[2mnull\x1b[0m\x1b[1m,\x1b[0m `+
 		`\x1b[1m\x1b[94m\"ar\\u001b[36mcyan\\u001b[0mray\"\x1b[0m\x1b[1m:\x1b[0m `+
 		`\x1b[1m[\x1b[0m\x1b[33m1\x1b[0m, \x1b[33m2\x1b[0m, \x1b[33m3\x1b[0m, `+
-		`\x1b[32m\"123\"\x1b[0m, \x1b[32m\"456\"\x1b[0m\x1b[1m]\x1b[0m `+
+		`\x1b[32m\"123\"\x1b[0m, \x1b[32m\"456\"\x1b[0m\x1b[1m]\x1b[0m`+
 		`\x1b[1m}\x1b[0m\n\x1b[1m}\x1b[0m\n"` {
 		t.Fatal("invalid output")
 	}
@@ -623,13 +623,18 @@ func TestSingleLineObjects(t *testing.T) {
 	  },
 	  "shortNested": [{
 	      "something": "any value","stuff": 12345}
-	  ]
+	  ], "nothing1": { 
+    }, "nothing2": [{   },"alt":{"inner":[{
+      }
+      ]}]
 	}`
 	json = string(Pretty([]byte(json)))
 	if json != `{
   "shortArray": [1, 2, 3, 4],
-  "shortObject": { "code:": "some_code", "value": 13262234 },
-  "shortNested": [{ "something": "any value", "stuff": 12345 }]
+  "shortObject": {"code:": "some_code", "value": 13262234},
+  "shortNested": [{"something": "any value", "stuff": 12345}],
+  "nothing1": {},
+  "nothing2": [{}, "alt", {"inner": [{}]}]
 }
 ` {
 		t.Fatalf("invalid output")
